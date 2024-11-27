@@ -18,6 +18,7 @@ participant "Spring Container" as Container
 participant "LifecycleBean" as Bean
 participant "Resource" as Resource
 participant "ApplicationContext" as Context
+participant "Client" as Client
 
 == Instantiation Phase ==
 Container -> Bean : 1. Constructor
@@ -62,14 +63,14 @@ Bean --> Context : Event handled
 deactivate Bean
 
 == Usage Phase ==
-[-> Bean : 6. performOperation()
+Client -> Bean : 6. performOperation()
 activate Bean
 Bean -> Resource : use()
 activate Resource
 Resource -> Resource : used = true
 Resource --> Bean : operation complete
 deactivate Resource
-Bean --> [: operation result
+Bean --> Client : operation result
 deactivate Bean
 
 == Destruction Phase ==
@@ -98,7 +99,7 @@ note right of Bean
   - isResourceClosed()
 end note
 
-legend right
+legend
   |= Phase |= Annotations/Interfaces |
   | Instantiation | Constructor |
   | Injection | @Autowired |
@@ -106,6 +107,6 @@ legend right
   | Ready | ApplicationListener |
   | Usage | Business Methods |
   | Destruction | @PreDestroy, DisposableBean |
-endlegend
+end legend
 
 @enduml

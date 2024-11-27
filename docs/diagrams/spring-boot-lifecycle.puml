@@ -1,0 +1,121 @@
+@startuml Spring Boot Lifecycle
+
+skinparam {
+    BackgroundColor transparent
+    ArrowColor #2C3E50
+    BorderColor #2C3E50
+    NodeBackgroundColor #ECF0F1
+    NodeBorderColor #34495E
+    stereotypeCBackgroundColor #3498DB
+}
+
+title Spring Boot Application Lifecycle
+
+' Application Startup Phase
+package "1. Application Startup" {
+    [Bootstrap Phase] as bootstrap
+    [Environment Preparation] as env
+    [ApplicationContext Creation] as context
+    [Bean Definition Loading] as beanDef
+}
+
+' Bean Lifecycle Phase
+package "2. Bean Lifecycle" {
+    node "2.1 Initialization Phase" {
+        [Constructor] as constructor
+        [Dependency Injection] as di
+        [PostConstruct] as post
+        [InitializingBean] as init
+        [Custom Init Method] as customInit
+    }
+
+    node "2.2 Runtime Phase" {
+        [Bean Ready] as ready
+        [Normal Operation] as operation
+    }
+
+    node "2.3 Destruction Phase" {
+        [PreDestroy] as preDestroy
+        [DisposableBean] as disposable
+        [Custom Destroy Method] as customDestroy
+    }
+}
+
+' Application Events
+package "3. Application Events" {
+    [ApplicationStartingEvent] as startEvent
+    [ApplicationEnvironmentPreparedEvent] as envEvent
+    [ApplicationContextInitializedEvent] as contextEvent
+    [ApplicationPreparedEvent] as prepEvent
+    [ApplicationStartedEvent] as startedEvent
+    [ApplicationReadyEvent] as readyEvent
+    [ApplicationFailedEvent] as failEvent
+}
+
+' Connections - Startup Phase
+bootstrap -> env
+env -> context
+context -> beanDef
+
+' Connections - Bean Lifecycle
+beanDef --> constructor : For each bean
+constructor --> di
+di --> post : "@PostConstruct"
+post --> init : "afterPropertiesSet()"
+init --> customInit : "@Bean(initMethod)"
+customInit --> ready
+ready --> operation
+
+' Connections - Shutdown
+operation --> preDestroy : "@PreDestroy"
+preDestroy --> disposable : "destroy()"
+disposable --> customDestroy : "@Bean(destroyMethod)"
+
+' Event Connections
+startEvent -[#green]-> bootstrap : triggers
+envEvent -[#green]-> env : triggers
+contextEvent -[#green]-> context : triggers
+prepEvent -[#green]-> beanDef : triggers
+startedEvent -[#green]-> ready : triggers
+readyEvent -[#green]-> operation : triggers
+failEvent -[#red]-> operation : on error
+
+legend right
+    |Color|Type|
+    |<#ECF0F1>|Normal Flow|
+    |<#3498DB>|Event Trigger|
+    |<#E74C3C>|Error Path|
+endlegend
+
+note right of constructor
+    Core Lifecycle Methods:
+    1. Constructor
+    2. @PostConstruct
+    3. afterPropertiesSet()
+    4. @Bean(initMethod)
+    5. @PreDestroy
+    6. destroy()
+end note
+
+note right of operation
+    Bean States:
+    1. Not Exists
+    2. Instantiated
+    3. Populated
+    4. Initialized
+    5. In Service
+    6. Destroyed
+end note
+
+note right of startEvent
+    Event Sequence:
+    1. Starting
+    2. Environment Prepared
+    3. Context Initialized
+    4. Prepared
+    5. Started
+    6. Ready
+    7. Failed (if error)
+end note
+
+@enduml

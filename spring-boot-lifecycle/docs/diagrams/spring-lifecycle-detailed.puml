@@ -1,0 +1,111 @@
+@startuml Spring Bean Lifecycle - Detailed Method Flow
+
+skinparam backgroundColor white
+skinparam handwritten false
+skinparam defaultFontName Arial
+skinparam sequence {
+    ArrowColor DeepSkyBlue
+    LifeLineBorderColor blue
+    LifeLineBackgroundColor TECHNOLOGY
+    ParticipantBorderColor DeepSkyBlue
+    ParticipantBackgroundColor white
+    ParticipantFontColor black
+}
+
+title Spring Bean Lifecycle - Detailed Method Flow
+
+participant "Spring Container" as Container
+participant "LifecycleBean" as Bean
+participant "Resource" as Resource
+participant "ApplicationContext" as Context
+
+== Instantiation Phase ==
+Container -> Bean : 1. Constructor
+activate Bean
+Bean -> Resource : new Resource()
+activate Resource
+Resource --> Bean : resource instance
+deactivate Resource
+Bean --> Container : Bean instance
+deactivate Bean
+
+== Dependency Injection Phase ==
+Container -> Bean : 2. Property Setting
+activate Bean
+note right: Spring injects any dependencies\nmarked with @Autowired
+Bean --> Container : Properties set
+deactivate Bean
+
+== Initialization Phase ==
+Container -> Bean : 3. @PostConstruct (init())
+activate Bean
+Bean -> Resource : initialize()
+activate Resource
+Resource -> Resource : initialized = true
+Resource --> Bean : initialization complete
+deactivate Resource
+Bean -> Bean : initialized = true
+Bean --> Container : Post-construct complete
+deactivate Bean
+
+Container -> Bean : 4. InitializingBean.afterPropertiesSet()
+activate Bean
+note right: Validates initialization state\nand performs final setup
+Bean --> Container : afterPropertiesSet complete
+deactivate Bean
+
+== Ready Phase ==
+Context -> Bean : 5. ContextRefreshedEvent
+activate Bean
+Bean -> Bean : contextRefreshed = true
+Bean --> Context : Event handled
+deactivate Bean
+
+== Usage Phase ==
+[-> Bean : 6. performOperation()
+activate Bean
+Bean -> Resource : use()
+activate Resource
+Resource -> Resource : used = true
+Resource --> Bean : operation complete
+deactivate Resource
+Bean --> [: operation result
+deactivate Bean
+
+== Destruction Phase ==
+Container -> Bean : 7. @PreDestroy (cleanup())
+activate Bean
+Bean -> Resource : close()
+activate Resource
+Resource -> Resource : closed = true
+Resource --> Bean : cleanup complete
+deactivate Resource
+Bean --> Container : Pre-destroy complete
+deactivate Bean
+
+Container -> Bean : 8. DisposableBean.destroy()
+activate Bean
+note right: Final cleanup operations
+Bean --> Container : Destroy complete
+deactivate Bean
+
+== State Tracking Methods ==
+note right of Bean
+  State Check Methods:
+  - isInitialized()
+  - isContextRefreshed()
+  - isResourceUsed()
+  - isResourceClosed()
+end note
+
+legend right
+  |= Phase |= Annotations/Interfaces |
+  | Instantiation | Constructor |
+  | Injection | @Autowired |
+  | Initialization | @PostConstruct, InitializingBean |
+  | Ready | ApplicationListener |
+  | Usage | Business Methods |
+  | Destruction | @PreDestroy, DisposableBean |
+endlegend
+
+@enduml

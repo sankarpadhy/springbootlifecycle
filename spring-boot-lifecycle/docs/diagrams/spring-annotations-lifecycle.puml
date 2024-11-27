@@ -1,0 +1,75 @@
+@startuml
+skinparam componentStyle uml2
+
+title Spring Bean Lifecycle and Annotations
+
+participant "Spring Container" as Container
+participant "@Configuration" as Config
+participant "BeanFactoryPostProcessor" as BFPP
+participant "BeanPostProcessor" as BPP
+participant "@Component Bean" as Bean
+participant "@EventListener" as Event
+
+== Container Initialization ==
+[-> Container: Start Application Context
+activate Container
+
+Container -> Config: Process @Configuration classes
+activate Config
+Config --> Container: Bean definitions
+deactivate Config
+
+Container -> BFPP: Invoke BeanFactoryPostProcessors
+activate BFPP
+note right: Modify bean definitions\nbefore instantiation
+BFPP --> Container
+deactivate BFPP
+
+== Bean Lifecycle ==
+Container -> Bean: Instantiate Bean
+activate Bean
+note right: Constructor called
+
+Container -> Bean: Dependency Injection
+note right: @Autowired fields populated
+
+Container -> BPP: beforeInitialization
+activate BPP
+BPP --> Container
+deactivate BPP
+
+Container -> Bean: @PostConstruct
+note right: Post-initialization tasks
+
+Container -> BPP: afterInitialization
+activate BPP
+BPP --> Container
+deactivate BPP
+
+Container -> Event: ApplicationReadyEvent
+activate Event
+note right: Application fully started
+
+== Bean Destruction ==
+[-> Container: Shutdown signal
+Container -> Bean: @PreDestroy
+note right: Cleanup resources
+
+Container -> Bean: destroy
+deactivate Bean
+Container -> Event: ContextClosedEvent
+deactivate Event
+
+[<- Container: Context Closed
+deactivate Container
+
+legend right
+  Phase Annotations/Interfaces
+  ==
+  Configuration: @Configuration, @Bean, @Component
+  Initialization: @PostConstruct, InitializingBean
+  Dependency: @Autowired, @Value, @DependsOn
+  Runtime: @EventListener, @Async, @Scheduled
+  Destruction: @PreDestroy, DisposableBean
+end legend
+@enduml
